@@ -22,24 +22,24 @@ An end-to-end, production-grade **Flight Operations Data Engineering Pipeline** 
 
 ```mermaid
 flowchart LR
-    subgraph Data Source
-        API[OpenSky Network API\nLive Aircraft State Vectors]
+    subgraph DS ["Data Source"]
+        API["OpenSky Network API - Live Aircraft State Vectors"]
     end
 
-    subgraph Data Pipeline (Medallion Architecture)
-        Bronze[🥉 Bronze Layer\nRaw JSON Files\n/data/bronze]
-        Silver[🥈 Silver Layer\nCleaned CSV Telemetry\n/data/silver]
-        Gold[🥇 Gold Layer\nAggregated KPIs CSV\n/data/gold]
+    subgraph DP ["Data Pipeline - Medallion Architecture"]
+        Bronze["Bronze Layer - Raw JSON Files"]
+        Silver["Silver Layer - Cleaned CSV Telemetry"]
+        Gold["Gold Layer - Aggregated KPIs CSV"]
     end
 
-    subgraph Orchestration & Storage
-        Airflow[⚙️ Apache Airflow 2.9.3\nScheduler & Webserver]
-        GHA[⚡ GitHub Actions\n24/7 Cloud Automation]
-        SF[(❄️ Snowflake DWH\nFLIGHT_DB.PUBLIC.FLIGHT_KPIS)]
+    subgraph OS ["Orchestration & Storage"]
+        Airflow["Apache Airflow 2.9.3 - Local"]
+        GHA["GitHub Actions - 24/7 Cloud Runner"]
+        SF["Snowflake DWH - FLIGHT_KPIS"]
     end
 
-    subgraph Analytics & Visualization
-        Dash[📊 Streamlit Cloud\nLive Public Web App]
+    subgraph AV ["Analytics & Visualization"]
+        Dash["Streamlit Cloud - Live Web App"]
     end
 
     API -->|HTTP GET| Bronze
