@@ -1,0 +1,64 @@
+name: Scheduled Flight Ops Medallion Pipeline
+
+on:
+  schedule:
+    # Runs automatically every 30 minutes 24/7 on GitHub Cloud
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          pip install pandas requests snowflake-connector-python python-dotenv
+
+      - name: Execute Medallion Pipeline
+        env:
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          python -c "
+          from pathlib import Path
+          from scripts.bronze_ingest import run_bronze_ingestion
+          from scripts.silver_transform import run_silver_transform
+          from scripts.gold_aggregate import run_gold_aggregate
+          from scripts.load_gold_to_snowflake import load_gold_to_snowflake
+          from datetime import datetime
+
+          class Context(dict):
+              def __init__(self):
+                  self['ds_nodash'] = datetime.utcnow().strftime('%Y%m%d')
+                  self['data_interval_start'] = datetime.utcnow()
+                  self['ti'] = self
+                  self._xcom = {}
+              def xcom_push(self, key, value):
+                  self._xcom[key] = value
+              def xcom_pull(self, key, task_ids):
+                  return self._xcom.get(key)
+
+          ctx = Context()
+          print('--- Running Bronze Ingestion ---')
+          run_bronze_ingestion(ti=ctx)
+          print('--- Running Silver Transformation ---')
+          run_silver_transform(ti=ctx, ds_nodash=ctx['ds_nodash'])
+          print('--- Running Gold Aggregation ---')
+          run_gold_aggregate(ti=ctx)
+          print('--- Loading Gold to Snowflake ---')
+          load_gold_to_snowflake(ti=ctx, data_interval_start=ctx['data_interval_start'])
+          print('✅ Pipeline completed successfully!')
+          "

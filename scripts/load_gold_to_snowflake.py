@@ -15,16 +15,34 @@ def load_gold_to_snowflake(**context):
     
     df = pd.read_csv(gold_file)
 
-    conn = BaseHook.get_connection("flight_snowflake")
+    try:
+        from airflow.hooks.base import BaseHook
+        conn = BaseHook.get_connection("flight_snowflake")
+        user = conn.login
+        password = conn.password
+        account = conn.extra_dejson["account"]
+        warehouse = conn.extra_dejson.get("warehouse")
+        database = conn.extra_dejson.get("database")
+        schema = conn.schema
+        role = conn.extra_dejson.get("role")
+    except Exception:
+        import os
+        user = os.getenv("SNOWFLAKE_USER")
+        password = os.getenv("SNOWFLAKE_PASSWORD")
+        account = os.getenv("SNOWFLAKE_ACCOUNT")
+        warehouse = os.getenv("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH")
+        database = os.getenv("SNOWFLAKE_DATABASE", "FLIGHT_DB")
+        schema = os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC")
+        role = os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN")
 
     sf_conn = snowflake.connector.connect(
-        user=conn.login,
-        password=conn.password,
-        account=conn.extra_dejson["account"],
-        warehouse=conn.extra_dejson.get("warehouse"),
-        database=conn.extra_dejson.get("database"),
-        schema=conn.schema,
-        role=conn.extra_dejson.get("role")
+        user=user,
+        password=password,
+        account=account,
+        warehouse=warehouse,
+        database=database,
+        schema=schema,
+        role=role
     )
 
     merge_sql = """
