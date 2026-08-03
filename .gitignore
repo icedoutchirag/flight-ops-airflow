@@ -1,0 +1,17 @@
+# Environment and Secrets
+.env
+.streamlit/secrets.toml
+
+# Data directory
+data/
+logs/
+plugins/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
