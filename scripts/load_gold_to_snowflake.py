@@ -1,6 +1,5 @@
 import pandas as pd
 import snowflake.connector
-from airflow.hooks.base import BaseHook
 
 def load_gold_to_snowflake(**context):
     gold_file = context["ti"].xcom_pull(
