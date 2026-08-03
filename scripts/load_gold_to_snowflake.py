@@ -34,6 +34,9 @@ def load_gold_to_snowflake(**context):
         schema = os.getenv("SNOWFLAKE_SCHEMA", "PUBLIC")
         role = os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN")
 
+    if account:
+        account = account.replace("https://", "").replace("http://", "").split(".")[0].strip()
+
     sf_conn = snowflake.connector.connect(
         user=user,
         password=password,
