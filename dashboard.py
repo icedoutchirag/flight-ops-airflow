@@ -95,7 +95,7 @@ def fetch_data():
 
 # Header
 st.title("✈️ Global Flight Operations Dashboard")
-st.markdown("Real-time Medallion Pipeline Analytics powered by **Apache Airflow** & **Snowflake**")
+st.markdown("Real-time Medallion Pipeline Analytics powered by **Apache Airflow** & **Supabase Cloud DWH**")
 st.divider()
 
 try:
