@@ -50,12 +50,14 @@ def fetch_data():
             )
             if res.status_code == 200:
                 data = res.json()
-                if data:
+                if isinstance(data, list):
+                    if len(data) == 0:
+                        return pd.DataFrame(columns=["WINDOW_START", "ORIGIN_COUNTRY", "TOTAL_FLIGHTS", "AVG_VELOCITY", "ON_GROUND", "LOAD_TIME"])
                     df = pd.DataFrame(data)
                     df.columns = [col.upper() for col in df.columns]
                     return df
-        except Exception:
-            pass
+        except Exception as e:
+            st.warning(f"Supabase connection notice: {e}")
 
     # Fallback to Snowflake if active credentials present
     sf_user = st.secrets.get("SNOWFLAKE_USER", os.getenv("POSTGRES_USER", "Icedoutchirag"))
