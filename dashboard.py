@@ -30,10 +30,34 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def fetch_data():
-    """Fetch flight KPIs from Snowflake."""
-    # Attempt to read credentials from Streamlit secrets first, then environment variables
+    """Fetch flight KPIs from Supabase REST API (or Snowflake fallback)."""
+    supabase_url = st.secrets.get("SUPABASE_URL", os.getenv("SUPABASE_URL", "https://ybxbqdukhfjnbwcmwdih.supabase.co"))
+    supabase_key = st.secrets.get("SUPABASE_KEY", os.getenv("SUPABASE_KEY", "sb_publishable_XBxayHSnweLtvY7s8hICRA_hibV0b1W"))
+
+    if supabase_url and supabase_key:
+        import requests
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}"
+        }
+        try:
+            res = requests.get(
+                f"{supabase_url}/rest/v1/flight_kpis?select=*&order=total_flights.desc",
+                headers=headers,
+                timeout=15
+            )
+            if res.status_code == 200:
+                data = res.json()
+                if data:
+                    df = pd.DataFrame(data)
+                    df.columns = [col.upper() for col in df.columns]
+                    return df
+        except Exception:
+            pass
+
+    # Fallback to Snowflake if active credentials present
     sf_user = st.secrets.get("SNOWFLAKE_USER", os.getenv("POSTGRES_USER", "Icedoutchirag"))
     sf_password = st.secrets.get("SNOWFLAKE_PASSWORD", os.getenv("POSTGRES_PASSWORD", ""))
     sf_account = st.secrets.get("SNOWFLAKE_ACCOUNT", "IJOTPCJ-UK61129")
